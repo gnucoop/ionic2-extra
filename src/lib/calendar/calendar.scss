@@ -1,0 +1,70 @@
+$ion-calendar-row-height: 40px;
+$ion-calendar-height: $ion-calendar-row-height * 8;
+
+:host {
+  display: flex;
+
+  box-sizing: border-box;
+
+  width: 100%;
+  height: $ion-calendar-height;
+
+  flex-direction: column;
+
+  .ion-calendar-header, .ion-calendar-row {
+    display: flex;
+    box-sizing: border-box;
+
+    width: 100%;
+
+    flex-direction: row;
+  }
+
+  .ion-calendar-header {
+    height: $ion-calendar-row-height;
+
+    button[ion-fab] {
+      width: $ion-calendar-row-height;
+      height: $ion-calendar-row-height;
+      margin: 0;
+      position: relative;
+      left: 0;
+      right: 0;
+    }
+    .ion-calendar-header-title {
+      flex: 1;
+      margin: 0 10px;
+    }
+  }
+
+  .ion-calendar-row {
+    flex: 1;
+
+    button, div {
+      flex: 1;
+      margin: 3px;
+      height: auto;
+    }
+
+    div {
+      line-height: $ion-calendar-row-height;
+      text-align: center;
+    }
+
+    .ion-calendar-partial-selection {
+      ::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background-color: rgba(255, 255, 255, 0.5);
+      }
+    }
+
+    .ion-calendar-highlight {
+      background-color: #fcd739;
+    }
+  }
+}

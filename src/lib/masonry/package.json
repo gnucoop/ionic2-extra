@@ -1,0 +1,26 @@
+{
+  "name": "@ionic2-extra/masonry",
+  "version": "0.0.24",
+  "description": "Masonry layout built on Ionic 2",
+  "main": "./masonry.umd.js",
+  "module": "./index.js",
+  "typings": "./index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gnucoop/ionic2-extra.git"
+  },
+  "keywords": [
+    "angular",
+    "ionic",
+    "components",
+    "masonry",
+    "layout"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gnucoop/ionic2-extra/issues"
+  },
+  "homepage": "https://github.com/gnucoop/ionic2-extra#readme",
+  "peerDependencies": {
+  }
+}

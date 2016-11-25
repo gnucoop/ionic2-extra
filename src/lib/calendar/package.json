@@ -1,0 +1,26 @@
+{
+  "name": "@ionic2-extra/calendar",
+  "version": "0.0.24",
+  "description": "Calendar widget built on Ionic 2",
+  "main": "./calendar.umd.js",
+  "module": "./index.js",
+  "typings": "./index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gnucoop/ionic2-extra.git"
+  },
+  "keywords": [
+    "ionic",
+    "components",
+    "calendar",
+    "datepicker"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gnucoop/ionic2-extra/issues"
+  },
+  "homepage": "https://github.com/gnucoop/ionic2-extra#readme",
+  "peerDependencies": {
+    "moment": "^2.15.1"
+  }
+}
