@@ -182,7 +182,7 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
 
   private _change: EventEmitter<IonCalendarChange> = new EventEmitter<IonCalendarChange>();
   @Output()
-  public change(): Observable<IonCalendarChange> { return this._change.asObservable(); }
+  get change(): Observable<IonCalendarChange> { return this._change.asObservable(); }
 
   private _selectedPeriod: IonCalendarPeriod;
   private set selectedPeriod(period: IonCalendarPeriod) {
