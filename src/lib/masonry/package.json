@@ -1,6 +1,6 @@
 {
   "name": "@ionic2-extra/masonry",
-  "version": "0.0.24",
+  "version": "0.0.26",
   "description": "Masonry layout built on Ionic 2",
   "main": "./masonry.umd.js",
   "module": "./index.js",
