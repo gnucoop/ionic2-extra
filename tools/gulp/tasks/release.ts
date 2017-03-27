@@ -52,7 +52,7 @@ function _execNpmPublish(componentName: string, label: string): Promise<void> {
 
   const command = 'npm';
   const args = ['publish', '--access', 'public', label ? `--tag` : undefined, label || undefined];
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     console.log(`Executing "${command} ${args.join(' ')}"...`);
 
     const childProcess = spawn(command, args);

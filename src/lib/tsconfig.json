@@ -12,7 +12,7 @@
     "outDir": "../../dist/@ionic2-extra",
     "rootDir": ".",
     "sourceMap": true,
-    "target": "es5",
+    "target": "es2015",
     "inlineSources": true,
     "stripInternal": true,
     "baseUrl": "",
