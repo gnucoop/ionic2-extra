@@ -15,7 +15,7 @@ const componentsDir = path.join(SOURCE_ROOT, 'lib');
 function camelCase(str: string) {
   return str.replace(/-(\w)/g, (_: any, letter: string) => {
     return letter.toUpperCase();
-  })
+  });
 }
 
 
@@ -69,7 +69,7 @@ task(':build:components:rollup', [':build:components:ts'], () => {
     'moment': 'moment'
   };
   components.forEach(name => {
-    globals[`@ionic2-extra/${name}`] = `i2e.${camelCase(name)}`
+    globals[`@ionic2-extra/${name}`] = `i2e.${camelCase(name)}`;
   });
 
   // Build all of them asynchronously.
@@ -77,22 +77,26 @@ task(':build:components:rollup', [':build:components:ts'], () => {
     return previous
       .then(() => {
         return rollup({
-          entry: path.join(DIST_COMPONENTS_ROOT, name, 'index.js'),
+          input: path.join(DIST_COMPONENTS_ROOT, name, 'index.js'),
           context: 'window',
           external: [
             ...Object.keys(globals),
-            ...components.map(name => `@ionic2-extra/${name}`)
+            ...components.map(n => `@ionic2-extra/${n}`)
           ]
         });
       })
       .then((bundle: any) => {
-        const result = bundle.generate({
-          moduleName: `md.${camelCase(name)}`,
+        bundle.generate({
+          moduleId: '',
+          name: `md.${camelCase(name)}`,
           format: 'umd',
-          globals
+          globals,
+          sourcemap: true
+        })
+        .then((result: any) => {
+          const outputPath = path.join(DIST_COMPONENTS_ROOT, name, `${name}.umd.js`);
+          writeFileSync( outputPath, result.code );
         });
-        const outputPath = path.join(DIST_COMPONENTS_ROOT, name, `${name}.umd.js`);
-        writeFileSync( outputPath, result.code );
       });
   }, Promise.resolve());
 });
@@ -105,7 +109,8 @@ task('build:components', sequenceTask(
 ));
 
 task(':build:components:ngc', ['build:components'], execNodeTask(
-  '@angular/compiler-cli', 'ngc', ['-p', path.relative(PROJECT_ROOT, path.join(componentsDir, 'tsconfig.json'))]
+  '@angular/compiler-cli', 'ngc',
+  ['-p', path.relative(PROJECT_ROOT, path.join(componentsDir, 'tsconfig.json'))]
 ));
 
 task(':inline-resources', () => {

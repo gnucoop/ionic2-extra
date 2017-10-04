@@ -15,6 +15,7 @@
     "target": "es2015",
     "inlineSources": true,
     "stripInternal": true,
+    "skipLibCheck": true,
     "baseUrl": "",
     "paths": {
       "@ionic2-extra/*": [
