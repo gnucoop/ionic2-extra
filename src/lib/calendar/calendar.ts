@@ -50,7 +50,7 @@ export class IonCalendarPeriod {
 
 export class IonCalendarChange {
   source: IonCalendar;
-  period: IonCalendarPeriod;
+  period: IonCalendarPeriod | null;
 }
 
 export class IonCalendarEntry {
@@ -90,10 +90,10 @@ export class IonCalendarEntry {
     return `${this.date.getFullYear()}`;
   }
 
-  getRange(): {start: moment.Moment, end: moment.Moment} {
+  getRange(): { start: moment.Moment, end: moment.Moment } {
     if (this.type === 'day') {
       let day: moment.Moment = momentConstructor(this.date);
-      return {start: day, end: day};
+      return { start: day, end: day };
     } else {
       let curMoment: moment.Moment = momentConstructor(this.date);
       return {
@@ -155,11 +155,21 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
   set startOfWeekDay(weekDay: IonCalendarWeekDay) {
     this._startOfWeekDay = weekDays.indexOf(weekDay);
 
-    (<any>moment).updateLocale(moment.locale(), { week: { dow: this._startOfWeekDay }});
+    (<any>moment).updateLocale(moment.locale(), { week: { dow: this._startOfWeekDay } });
 
     if (this._viewMode === 'month') {
       this._buildCalendar();
     }
+  }
+
+  private _isoMode: Boolean = false;
+
+  get isoMode(): Boolean {
+    return this._isoMode;
+  }
+  @Input('iso-mode')
+  set isoMode(isoMode: Boolean) {
+    this._isoMode = isoMode;
   }
 
   private _minDate: Date;
@@ -167,25 +177,28 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
     return this._minDate;
   }
   @Input()
-  set minDate(minDate: Date) {
+  set minDate(minDate: Date | null) {
     this._minDate = minDate != null ? new Date(minDate.valueOf()) : null;
   }
 
-  private _maxDate: Date;
-  get maxDate(): Date {
+  private _maxDate: Date | null;
+  get maxDate(): Date | null {
     return this._maxDate;
   }
   @Input()
-  set maxDate(maxDate: Date) {
+  set maxDate(maxDate: Date | null) {
     this._maxDate = maxDate != null ? new Date(maxDate.valueOf()) : null;
   }
 
   private _change: EventEmitter<IonCalendarChange> = new EventEmitter<IonCalendarChange>();
   @Output()
-  get change(): Observable<IonCalendarChange> { return this._change.asObservable(); }
+  get change(): Observable<IonCalendarChange> {
+    this._buildCalendar();
+    return this._change.asObservable();
+  }
 
-  private _selectedPeriod: IonCalendarPeriod;
-  private set selectedPeriod(period: IonCalendarPeriod) {
+  private _selectedPeriod: IonCalendarPeriod | null;
+  private set selectedPeriod(period: IonCalendarPeriod | null) {
     this._selectedPeriod = period;
     this._change.emit({
       source: this,
@@ -194,16 +207,16 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
     this._refreshSelection();
   }
 
-  get value(): IonCalendarPeriod | Date {
+  get value(): IonCalendarPeriod | Date | null {
     if (this._dateOnlyForDay && this.selectionMode === 'day') {
       return this._selectedPeriod != null ? this._selectedPeriod.startDate : null;
     }
     return this._selectedPeriod;
   }
-  set value(period: IonCalendarPeriod | Date) {
+  set value(period: IonCalendarPeriod | Date | null) {
     if (this._dateOnlyForDay && this.selectionMode === 'day') {
       if (period instanceof Date &&
-          (this._selectedPeriod == null || period !== this._selectedPeriod.startDate)) {
+        (this._selectedPeriod == null || period !== this._selectedPeriod.startDate)) {
         this.selectedPeriod = {
           type: 'day',
           startDate: period,
@@ -215,11 +228,11 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
         this._onChangeCallback(period);
       }
     } else if (period instanceof Object && period !== this._selectedPeriod) {
-        this.selectedPeriod = <IonCalendarPeriod>period;
-        if (this._init) {
-          this.ionChange.emit(this);
-        }
-        this._onChangeCallback(period);
+      this.selectedPeriod = <IonCalendarPeriod>period;
+      if (this._init) {
+        this.ionChange.emit(this);
+      }
+      this._onChangeCallback(period);
     }
   }
 
@@ -236,7 +249,7 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
   private _init: boolean;
 
   constructor(private _form: Form) {
-    _form.register(this);
+ //   _form.register(this);
   }
 
   prevPage(): void {
@@ -286,18 +299,61 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
           endDate: entry.date
         };
       }
-    } else if (this._selectionMode === 'week') {
+    } else if (this._selectionMode === 'week' && this._isoMode == false) {
       newPeriod = {
         type: 'week',
         startDate: new Date(momentConstructor(entry.date).startOf('week').toDate().valueOf()),
         endDate: new Date(momentConstructor(entry.date).endOf('week').toDate().valueOf())
       };
-    } else if (this._selectionMode === 'month') {
+    } else if (this._selectionMode == 'week' && this._isoMode == true) {
+      newPeriod = {
+        type: 'week',
+        startDate: new Date(momentConstructor(entry.date).startOf('week')
+          .add('d', 1).toDate().valueOf()),
+        endDate: new Date(momentConstructor(entry.date).endOf('week')
+          .add('d', 1).toDate().valueOf())
+      };
+    } else if (this._selectionMode === 'month' && this._isoMode == false) {
       newPeriod = {
         type: 'month',
         startDate: new Date(momentConstructor(entry.date).startOf('month').toDate().valueOf()),
         endDate: new Date(momentConstructor(entry.date).endOf('month').toDate().valueOf())
       };
+    } else if (this._selectionMode == 'month' && this._isoMode == true) {
+
+      let originalMonth = momentConstructor(this.viewDate).month();
+      let startMonthCounter = 0;
+      let endMonthCounter = 0;
+      let viewStartDate: moment.Moment;
+      let viewEndDate: moment.Moment;
+
+      for (let i = 0; i < 8; i++) {
+        let startMonth = momentConstructor(this.viewDate).startOf('month').isoWeekday(i).month();
+        if (startMonth < originalMonth) {
+          startMonthCounter++;
+        }
+        let endMonth = momentConstructor(this.viewDate).endOf('month').isoWeekday(i).month();
+        if (endMonth > originalMonth) {
+          endMonthCounter++;
+        }
+      }
+      if (startMonthCounter > 3) {
+        viewStartDate = momentConstructor(this.viewDate).startOf('month').isoWeekday(1).add('d', 7);
+      } else {
+        viewStartDate = momentConstructor(this.viewDate).startOf('month').isoWeekday(1);
+      }
+      if (endMonthCounter > 3) {
+        viewEndDate = momentConstructor(this.viewDate).endOf('month').subtract('d', 7)
+          .isoWeekday(7);
+      } else {
+        viewEndDate = momentConstructor(this.viewDate).endOf('month').isoWeekday(7);
+      }
+      newPeriod = {
+        type: 'month',
+        startDate: new Date(viewStartDate.toDate().valueOf()),
+        endDate: new Date(viewEndDate.toDate().valueOf())
+      };
+
     } else if (this._selectionMode === 'year') {
       newPeriod = {
         type: 'year',
@@ -333,11 +389,11 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
   }
 
   ngOnDestroy(): void {
-    this._form.deregister(this);
+  //  this._form.deregister(this);
   }
 
-  private _onChangeCallback: (_: any) => void = (_: any) => {};
-  private _onTouchedCallback: () => void = () => {};
+  private _onChangeCallback: (_: any) => void = (_: any) => { };
+  private _onTouchedCallback: () => void = () => { };
 
   private _getMonthName(date: Date): string {
     return momentConstructor(date).format('MMM');
@@ -370,9 +426,9 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
       .year(firstYear);
 
     let rows: IonCalendarEntry[][] = [];
-    for (let i = 0 ; i < 4 ; i ++) {
+    for (let i = 0; i < 4; i++) {
       let row: IonCalendarEntry[] = [];
-      for (let j = 0 ; j < 3 ; j ++) {
+      for (let j = 0; j < 3; j++) {
         let date = new Date(curDate.toDate().valueOf());
         let newEntry = new IonCalendarEntry({
           type: 'year',
@@ -395,9 +451,9 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
       .startOf('year');
 
     let rows: IonCalendarEntry[][] = [];
-    for (let i = 0 ; i < 4 ; i ++) {
+    for (let i = 0; i < 4; i++) {
       let row: IonCalendarEntry[] = [];
-      for (let j = 0 ; j < 3 ; j ++) {
+      for (let j = 0; j < 3; j++) {
         let date = new Date(curDate.toDate().valueOf());
         let newEntry = new IonCalendarEntry({
           type: 'month',
@@ -417,13 +473,43 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
     this._viewHeader = momentConstructor(this._viewDate).format('MMM YYYY');
 
     this._buildMonthViewWeekDays();
+    let viewStartDate: moment.Moment;
+    let viewEndDate: moment.Moment;
+    if (this._isoMode) {
 
-    let viewStartDate: moment.Moment = momentConstructor(this.viewDate)
-      .startOf('month')
-      .startOf('week');
-    let viewEndDate: moment.Moment = momentConstructor(this.viewDate)
-      .endOf('month')
-      .endOf('week');
+      let originalMonth = momentConstructor(this.viewDate).month();
+      let startMonthCounter = 0;
+      let endMonthCounter = 0;
+
+      for (let i = 0; i < 8; i++) {
+        let startMonth = momentConstructor(this.viewDate).startOf('month').isoWeekday(i).month();
+        if (startMonth < originalMonth) {
+          startMonthCounter++;
+        }
+        let endMonth = momentConstructor(this.viewDate).endOf('month').isoWeekday(i).month();
+        if (endMonth > originalMonth) {
+          endMonthCounter++;
+        }
+      }
+      if (startMonthCounter > 3) {
+        viewStartDate = momentConstructor(this.viewDate).startOf('month').isoWeekday(1).add('d', 7);
+      } else {
+        viewStartDate = momentConstructor(this.viewDate).startOf('month').isoWeekday(1);
+      }
+      if (endMonthCounter > 3) {
+        viewEndDate = momentConstructor(this.viewDate).endOf('month').subtract('d', 7);
+      } else {
+        viewEndDate = momentConstructor(this.viewDate).endOf('month');
+      }
+
+    } else {
+      viewStartDate = momentConstructor(this.viewDate)
+        .startOf('month')
+        .startOf('week');
+      viewEndDate = momentConstructor(this.viewDate)
+        .endOf('month')
+        .endOf('week');
+    }
 
     let rows: IonCalendarEntry[][] = [];
     let todayDate = momentConstructor();
@@ -432,7 +518,7 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
     let maxDate = this.maxDate == null ? null : momentConstructor(this.maxDate);
     while (curDate < viewEndDate) {
       let row: IonCalendarEntry[] = [];
-      for (let i = 0 ; i < 7 ; i++) {
+      for (let i = 0; i < 7; i++) {
         let disabled = (minDate != null && curDate.isBefore(minDate)) ||
           (maxDate != null && curDate.isAfter(maxDate));
         let date = new Date(curDate.toDate().valueOf());
@@ -456,7 +542,7 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
   private _buildMonthViewWeekDays(): void {
     let curMoment = momentConstructor().startOf('week');
     let weekDayNames: string[] = [];
-    for (let i = 0 ; i < 7 ; i++) {
+    for (let i = 0; i < 7; i++) {
       weekDayNames.push(curMoment.format('ddd'));
       curMoment.add(1, 'd');
     }
@@ -469,7 +555,7 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
 
   private _isEntrySelected(entry: IonCalendarEntry): IonCalendarEntrySelectedState {
     if (this._selectedPeriod != null && this._selectedPeriod.type != null &&
-          this._selectedPeriod.startDate != null && this._selectedPeriod.endDate != null) {
+      this._selectedPeriod.startDate != null && this._selectedPeriod.endDate != null) {
       let selectionStart: moment.Moment = momentConstructor(this._selectedPeriod.startDate)
         .startOf('day');
       let selectionEnd: moment.Moment = momentConstructor(this._selectedPeriod.endDate)
@@ -477,7 +563,7 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
       let selectionPeriodOrder: number = this._periodOrder(this._selectedPeriod.type);
 
       let entryPeriodOrder: number = this._periodOrder(entry.type);
-      let entryRange: {start: moment.Moment, end: moment.Moment} = entry.getRange();
+      let entryRange: { start: moment.Moment, end: moment.Moment } = entry.getRange();
 
       if (entryPeriodOrder <= selectionPeriodOrder &&
         entryRange.start.isBetween(selectionStart, selectionEnd, null, '[]') &&
