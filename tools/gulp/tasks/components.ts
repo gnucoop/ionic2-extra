@@ -77,7 +77,7 @@ task(':build:components:rollup', [':build:components:ts'], () => {
     return previous
       .then(() => {
         return rollup({
-          input: path.join(DIST_COMPONENTS_ROOT, name, 'index.js'),
+          input: path.join(DIST_COMPONENTS_ROOT, name, 'public_api.js'),
           context: 'window',
           external: [
             ...Object.keys(globals),
