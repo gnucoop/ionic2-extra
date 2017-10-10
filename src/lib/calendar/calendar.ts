@@ -57,8 +57,8 @@ export class IonCalendarEntry {
   type: IonCalendarEntryType;
   date: Date;
   selected: IonCalendarEntrySelectedState;
-  disabled: boolean = false;
-  highlight: boolean = false;
+  disabled = false;
+  highlight = false;
 
   constructor(params: {
     type: IonCalendarEntryType,
@@ -114,18 +114,18 @@ export class IonCalendarEntry {
 export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnInit, OnDestroy {
   @Output() ionChange: EventEmitter<IonCalendar> = new EventEmitter<IonCalendar>();
 
-  get viewDate(): Date { return this._viewDate; };
+  get viewDate(): Date { return this._viewDate; }
   @Input('view-date')
   set viewDate(viewDate: Date) { this._setViewDate(viewDate); }
 
-  private _disabled: boolean = false;
+  private _disabled = false;
   get disabled(): boolean { return this._disabled; }
   @Input()
   set disabled(disabled: boolean) {
     this._disabled = disabled != null && `${disabled}` !== 'false';
   }
 
-  private _dateOnlyForDay: boolean = false;
+  private _dateOnlyForDay = false;
   get dateOnlyForDay(): boolean { return this._disabled; }
   @Input()
   set dateOnlyForDay(dateOnlyForDay: boolean) {
@@ -147,7 +147,7 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
     this._selectionMode = selectionMode;
   }
 
-  private _startOfWeekDay: number = 1;
+  private _startOfWeekDay = 1;
   get startOfWeekDay(): IonCalendarWeekDay {
     return <IonCalendarWeekDay>weekDays[this._startOfWeekDay];
   }
@@ -242,7 +242,7 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
 
   private _viewDate: Date = new Date();
   private _viewMoment: moment.Moment = momentConstructor();
-  private _viewHeader: string = '';
+  private _viewHeader = '';
 
   private _calendarRows: IonCalendarEntry[][] = [];
   private _weekDays: string[] = [];
@@ -299,61 +299,25 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
           endDate: entry.date
         };
       }
-    } else if (this._selectionMode === 'week' && this._isoMode == false) {
+    } else if (this._selectionMode === 'week') {
       newPeriod = {
         type: 'week',
-        startDate: new Date(momentConstructor(entry.date).startOf('week').toDate().valueOf()),
-        endDate: new Date(momentConstructor(entry.date).endOf('week').toDate().valueOf())
+        startDate: new Date(
+          momentConstructor(entry.date).startOf(this._isoMode ? 'isoWeek' : 'week')
+            .toDate().valueOf()
+        ),
+        endDate: new Date(
+          momentConstructor(entry.date).endOf(this._isoMode ? 'isoWeek' : 'week')
+            .toDate().valueOf()
+        )
       };
-    } else if (this._selectionMode == 'week' && this._isoMode == true) {
-      newPeriod = {
-        type: 'week',
-        startDate: new Date(momentConstructor(entry.date).startOf('week')
-          .add('d', 1).toDate().valueOf()),
-        endDate: new Date(momentConstructor(entry.date).endOf('week')
-          .add('d', 1).toDate().valueOf())
-      };
-    } else if (this._selectionMode === 'month' && this._isoMode == false) {
-      newPeriod = {
-        type: 'month',
-        startDate: new Date(momentConstructor(entry.date).startOf('month').toDate().valueOf()),
-        endDate: new Date(momentConstructor(entry.date).endOf('month').toDate().valueOf())
-      };
-    } else if (this._selectionMode == 'month' && this._isoMode == true) {
-
-      let originalMonth = momentConstructor(this.viewDate).month();
-      let startMonthCounter = 0;
-      let endMonthCounter = 0;
-      let viewStartDate: moment.Moment;
-      let viewEndDate: moment.Moment;
-
-      for (let i = 0; i < 8; i++) {
-        let startMonth = momentConstructor(this.viewDate).startOf('month').isoWeekday(i).month();
-        if (startMonth < originalMonth) {
-          startMonthCounter++;
-        }
-        let endMonth = momentConstructor(this.viewDate).endOf('month').isoWeekday(i).month();
-        if (endMonth > originalMonth) {
-          endMonthCounter++;
-        }
-      }
-      if (startMonthCounter > 3) {
-        viewStartDate = momentConstructor(this.viewDate).startOf('month').isoWeekday(1).add('d', 7);
-      } else {
-        viewStartDate = momentConstructor(this.viewDate).startOf('month').isoWeekday(1);
-      }
-      if (endMonthCounter > 3) {
-        viewEndDate = momentConstructor(this.viewDate).endOf('month').subtract('d', 7)
-          .isoWeekday(7);
-      } else {
-        viewEndDate = momentConstructor(this.viewDate).endOf('month').isoWeekday(7);
-      }
+    } else if (this._selectionMode === 'month') {
+      const monthBounds = this._getMonthStartEnd(entry.date);
       newPeriod = {
         type: 'month',
-        startDate: new Date(viewStartDate.toDate().valueOf()),
-        endDate: new Date(viewEndDate.toDate().valueOf())
+        startDate: new Date(monthBounds.start.toDate().valueOf()),
+        endDate: new Date(monthBounds.end.toDate().valueOf())
       };
-
     } else if (this._selectionMode === 'year') {
       newPeriod = {
         type: 'year',
@@ -402,6 +366,22 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
   private _setViewDate(date: Date): void {
     this._viewDate = date;
     this._viewMoment = momentConstructor(date);
+  }
+
+  private _getMonthStartEnd(date: Date): {start: moment.Moment, end: moment.Moment} {
+    let startDate = momentConstructor(date).startOf('month');
+    let endDate = momentConstructor(date).endOf('month');
+    if (this._isoMode) {
+      const startWeekDay = startDate.day();
+      const endWeekDay = endDate.day();
+      if (startWeekDay == 0 || startWeekDay > 4) {
+        startDate = startDate.add(7, 'd').startOf('isoWeek');
+      }
+      if (endWeekDay == 0 || endWeekDay > 4) {
+        endDate = endDate.subtract(7, 'd').endOf('isoWeek');
+      }
+    }
+    return {start: startDate, end: endDate};
   }
 
   private _buildCalendar(): void {
@@ -473,42 +453,12 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
     this._viewHeader = momentConstructor(this._viewDate).format('MMM YYYY');
 
     this._buildMonthViewWeekDays();
-    let viewStartDate: moment.Moment;
-    let viewEndDate: moment.Moment;
-    if (this._isoMode) {
-
-      let originalMonth = momentConstructor(this.viewDate).month();
-      let startMonthCounter = 0;
-      let endMonthCounter = 0;
-
-      for (let i = 0; i < 8; i++) {
-        let startMonth = momentConstructor(this.viewDate).startOf('month').isoWeekday(i).month();
-        if (startMonth < originalMonth) {
-          startMonthCounter++;
-        }
-        let endMonth = momentConstructor(this.viewDate).endOf('month').isoWeekday(i).month();
-        if (endMonth > originalMonth) {
-          endMonthCounter++;
-        }
-      }
-      if (startMonthCounter > 3) {
-        viewStartDate = momentConstructor(this.viewDate).startOf('month').isoWeekday(1).add('d', 7);
-      } else {
-        viewStartDate = momentConstructor(this.viewDate).startOf('month').isoWeekday(1);
-      }
-      if (endMonthCounter > 3) {
-        viewEndDate = momentConstructor(this.viewDate).endOf('month').subtract('d', 7);
-      } else {
-        viewEndDate = momentConstructor(this.viewDate).endOf('month');
-      }
-
-    } else {
-      viewStartDate = momentConstructor(this.viewDate)
-        .startOf('month')
-        .startOf('week');
-      viewEndDate = momentConstructor(this.viewDate)
-        .endOf('month')
-        .endOf('week');
+    const monthBounds = this._getMonthStartEnd(this._viewDate);
+    let viewStartDate: moment.Moment = monthBounds.start;
+    let viewEndDate: moment.Moment = monthBounds.end;
+    if (!this._isoMode) {
+      viewStartDate = viewStartDate.startOf('week');
+      viewEndDate = viewEndDate.endOf('week');
     }
 
     let rows: IonCalendarEntry[][] = [];
@@ -542,9 +492,9 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
   private _buildMonthViewWeekDays(): void {
     let curMoment;
     if (this._isoMode) {
-      curMoment = momentConstructor().startOf('week').isoWeekday(1);
+      curMoment = momentConstructor(this._viewDate).startOf('week').isoWeekday(1);
     } else {
-      curMoment = momentConstructor().startOf('week');
+      curMoment = momentConstructor(this._viewDate).startOf('week');
     }
     let weekDayNames: string[] = [];
     for (let i = 0; i < 7; i++) {
