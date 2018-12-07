@@ -66,7 +66,8 @@ task(':build:components:rollup', [':build:components:ts'], () => {
     'rxjs/Observable': 'Rx',
 
     'ionic-angular': 'ing',
-    'moment': 'moment'
+    'moment': 'moment',
+    '@ngx-translate/core': 'ngxt.core'
   };
   components.forEach(name => {
     globals[`@ionic2-extra/${name}`] = `i2e.${camelCase(name)}`;

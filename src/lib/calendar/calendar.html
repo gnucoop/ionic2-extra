@@ -1,13 +1,13 @@
 <div class="ion-calendar-header">
     <button ion-fab left [disabled]="disabled" (click)="prevPage()">&#8592;</button>
     <button ion-button [disabled]="disabled" (click)="previousViewMode()" light class="ion-calendar-header-title">
-        {{ viewHeader }}
+        {{ viewHeader | translate }}
     </button>
     <button ion-fab right [disabled]="disabled" (click)="nextPage()">&#8594;</button>
 </div>
 <div class="ion-calendar-row" *ngIf="viewMode == 'month'">
     <div *ngFor="let weekDay of weekDays">
-        <div class="button-label">{{ weekDay }}</div>
+        <div class="button-label">{{ weekDay | translate }}</div>
     </div>
 </div>
 <div class="ion-calendar-row" *ngFor="let row of calendarRows">
@@ -18,6 +18,6 @@
             [class.ion-calendar-highlight]="entry.selected === 'none' && entry.highlight"
             (click)="selectEntry(entry)"
             *ngFor="let entry of row">
-        {{ entry.toString() }}
+        {{ entry.toString() | translate }}
     </button>
 </div>

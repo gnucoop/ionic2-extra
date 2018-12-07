@@ -19,6 +19,7 @@ task('build:release', function(done: () => void) {
   gulpRunSequence(
     'clean',
     ':build:components:ngc',
+    ':inline-resources',
     ':build:release:clean-spec',
     done
   );

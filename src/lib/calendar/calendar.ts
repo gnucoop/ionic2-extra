@@ -4,7 +4,6 @@ import {
   EventEmitter,
   forwardRef,
   Input,
-  ModuleWithProviders,
   NgModule,
   OnInit,
   OnDestroy,
@@ -20,7 +19,7 @@ import {
 import { Observable } from 'rxjs/Observable';
 
 import { Form } from 'ionic-angular';
-
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import * as moment from 'moment';
 const momentConstructor: (value?: any) => moment.Moment = (<any>moment).default || moment;
 
@@ -248,8 +247,8 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
   private _weekDays: string[] = [];
   private _init: boolean;
 
-  constructor(private _form: Form) {
- //   _form.register(this);
+  constructor(private _form: Form, private _ts: TranslateService) {
+    //   _form.register(this);
   }
 
   prevPage(): void {
@@ -353,14 +352,14 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
   }
 
   ngOnDestroy(): void {
-  //  this._form.deregister(this);
+    //  this._form.deregister(this);
   }
 
   private _onChangeCallback: (_: any) => void = (_: any) => { };
   private _onTouchedCallback: () => void = () => { };
 
   private _getMonthName(date: Date): string {
-    return momentConstructor(date).format('MMM');
+    return this._ts.instant(momentConstructor(date).format('MMM'));
   }
 
   private _setViewDate(date: Date): void {
@@ -368,7 +367,7 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
     this._viewMoment = momentConstructor(date);
   }
 
-  private _getMonthStartEnd(date: Date): {start: moment.Moment, end: moment.Moment} {
+  private _getMonthStartEnd(date: Date): { start: moment.Moment, end: moment.Moment } {
     let startDate = momentConstructor(date).startOf('month');
     let endDate = momentConstructor(date).endOf('month');
     if (this._isoMode) {
@@ -381,7 +380,7 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
         endDate = endDate.subtract(7, 'd').endOf('isoWeek');
       }
     }
-    return {start: startDate, end: endDate};
+    return { start: startDate, end: endDate };
   }
 
   private _buildCalendar(): void {
@@ -450,7 +449,9 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
   }
 
   private _buildMonthView(): void {
-    this._viewHeader = momentConstructor(this._viewDate).format('MMM YYYY');
+    this._viewHeader = this._ts.instant(momentConstructor(this._viewDate).format('MMM'))
+      + ' '
+      + momentConstructor(this._viewDate).format('YYYY');
 
     this._buildMonthViewWeekDays();
     const monthBounds = this._getMonthStartEnd(this._viewDate);
@@ -567,20 +568,9 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
   }
 }
 
-export const ION_CALENDAR_DIRECTIVES = [IonCalendar];
-
 @NgModule({
-  imports: [CommonModule, IonicModule],
+  imports: [CommonModule, IonicModule, TranslateModule],
   exports: [IonCalendar],
-  declarations: [IonCalendar],
-  entryComponents: [IonCalendar],
-  providers: []
+  declarations: [IonCalendar]
 })
-export class IonCalendarModule {
-  static forRoot(): ModuleWithProviders {
-    return {
-      ngModule: IonCalendarModule,
-      providers: []
-    };
-  }
-}
+export class IonCalendarModule { }
