@@ -460,6 +460,9 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
     if (!this._isoMode) {
       viewStartDate = viewStartDate.startOf('week');
       viewEndDate = viewEndDate.endOf('week');
+    } else {
+      viewStartDate = viewStartDate.startOf('isoWeek');
+      viewEndDate = viewEndDate.endOf('isoWeek');
     }
 
     let rows: IonCalendarEntry[][] = [];
@@ -493,7 +496,7 @@ export class IonCalendar implements AfterContentInit, ControlValueAccessor, OnIn
   private _buildMonthViewWeekDays(): void {
     let curMoment;
     if (this._isoMode) {
-      curMoment = momentConstructor(this._viewDate).startOf('week').isoWeekday(1);
+      curMoment = momentConstructor(this._viewDate).startOf('isoWeek');
     } else {
       curMoment = momentConstructor(this._viewDate).startOf('week');
     }
