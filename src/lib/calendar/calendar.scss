@@ -1,7 +1,7 @@
 $ion-calendar-row-height: 40px;
 $ion-calendar-height: $ion-calendar-row-height * 8;
 
-:host {
+ion-calendar {
   display: flex;
 
   box-sizing: border-box;
